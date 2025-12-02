@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { membersAPI, feesAPI } from '../services/api';
-import { FiPlus, FiEdit2, FiX, FiDollarSign, FiCheck, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiX, FiCheck, FiTrash2 } from 'react-icons/fi';
 import './MemberManagement.css';
 
 const MemberManagement = () => {

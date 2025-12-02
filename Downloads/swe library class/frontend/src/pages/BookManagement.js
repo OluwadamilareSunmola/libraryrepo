@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { booksAPI, openLibraryAPI } from '../services/api';
 import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiX, FiBook } from 'react-icons/fi';
+import { resolveCoverImage, handleCoverImageError } from '../utils/coverHelpers';
 import './BookManagement.css';
 
 const BookManagement = () => {
@@ -233,26 +234,27 @@ const BookManagement = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {books.map(book => (
+                  {books.map(book => {
+                    const coverURL = resolveCoverImage(book.coverImage, book.isbn);
+                    return (
                     <tr
                       key={book.bookID}
                       className={selectedBook?.bookID === book.bookID ? 'selected' : ''}
                       onClick={() => handleBookClick(book)}
                     >
                       <td>
-                        {book.coverImage ? (
-                          <img 
-                            src={book.coverImage} 
-                            alt={book.title}
-                            className="book-cover-thumb"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.nextSibling.style.display = 'flex';
-                            }}
-                          />
-                        ) : null}
-                        <div className="book-cover-placeholder" style={{ display: book.coverImage ? 'none' : 'flex' }}>
-                          {book.title.charAt(0)}
+                        <div className="cover-thumb-wrapper">
+                          {coverURL ? (
+                            <img 
+                              src={coverURL} 
+                              alt={book.title}
+                              className="book-cover-thumb"
+                              onError={handleCoverImageError}
+                            />
+                          ) : null}
+                          <div className="book-cover-placeholder" style={{ display: coverURL ? 'none' : 'flex' }}>
+                            {(book.title || '?').charAt(0)}
+                          </div>
                         </div>
                       </td>
                       <td>{book.title}</td>
@@ -273,7 +275,8 @@ const BookManagement = () => {
                         </button>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

@@ -23,6 +23,7 @@ export const booksAPI = {
 export const membersAPI = {
   getAll: (params) => api.get('/members', { params }),
   getById: (id) => api.get(`/members/${id}`),
+  lookup: (params) => api.get('/members/lookup', { params }),
   create: (data) => api.post('/members', data),
   update: (id, data) => api.put(`/members/${id}`, data),
   deactivate: (id) => api.post(`/members/${id}/deactivate`),

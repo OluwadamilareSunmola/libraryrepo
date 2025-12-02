@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { searchAPI } from '../services/api';
 import { FiSearch, FiEye, FiEdit2, FiList } from 'react-icons/fi';
+import { resolveCoverImage, handleCoverImageError } from '../utils/coverHelpers';
 import './Search.css';
 
 const Search = () => {
@@ -169,22 +170,23 @@ const Search = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {results.map(book => (
+                  {results.map(book => {
+                    const coverURL = resolveCoverImage(book.coverImage, book.isbn);
+                    return (
                     <tr key={book.bookID}>
                       <td>
-                        {book.coverImage ? (
-                          <img 
-                            src={book.coverImage} 
-                            alt={book.title}
-                            className="book-cover"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.nextSibling.style.display = 'flex';
-                            }}
-                          />
-                        ) : null}
-                        <div className="book-cover-placeholder" style={{ display: book.coverImage ? 'none' : 'flex' }}>
-                          {book.title.charAt(0)}
+                        <div className="cover-thumb-wrapper">
+                          {coverURL ? (
+                            <img 
+                              src={coverURL} 
+                              alt={book.title}
+                              className="book-cover"
+                              onError={handleCoverImageError}
+                            />
+                          ) : null}
+                          <div className="book-cover-placeholder" style={{ display: coverURL ? 'none' : 'flex' }}>
+                            {(book.title || '?').charAt(0)}
+                          </div>
                         </div>
                       </td>
                       <td>{book.title}</td>
@@ -205,7 +207,8 @@ const Search = () => {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

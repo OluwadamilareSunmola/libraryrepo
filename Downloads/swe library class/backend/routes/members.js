@@ -45,6 +45,47 @@ router.get('/', (req, res) => {
   });
 });
 
+// Lookup member by membership ID or email (for member portal access)
+router.get('/lookup', (req, res) => {
+  const database = db.getDb();
+  const { membershipID, email } = req.query;
+
+  if (!membershipID && !email) {
+    return res.status(400).json({ error: 'Membership ID or email is required' });
+  }
+
+  let query = `SELECT userID, username, email, firstName, lastName, phone, address,
+               status, membershipID, membershipType, joinDate, membershipExpiration
+               FROM users
+               WHERE role = "member" AND (`;
+  const params = [];
+
+  if (membershipID) {
+    query += 'membershipID = ?';
+    params.push(membershipID);
+  }
+
+  if (email) {
+    if (membershipID) {
+      query += ' OR ';
+    }
+    query += 'email = ?';
+    params.push(email);
+  }
+
+  query += ') LIMIT 1';
+
+  database.get(query, params, (err, member) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (!member) {
+      return res.status(404).json({ error: 'Member not found' });
+    }
+    res.json(member);
+  });
+});
+
 // Get member by ID
 router.get('/:id', (req, res) => {
   const database = db.getDb();
@@ -228,4 +269,3 @@ router.get('/data/membership-types', (req, res) => {
 });
 
 module.exports = router;
-

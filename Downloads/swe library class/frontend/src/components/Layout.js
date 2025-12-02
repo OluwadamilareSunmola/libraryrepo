@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import { 
   FiHome, FiBook, FiUsers, FiRefreshCw, FiSearch, 
   FiBarChart2, FiSettings, FiLogOut, FiMenu, FiX 
 } from 'react-icons/fi';
 import './Layout.css';
 
-const Layout = ({ children }) => {
+const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
 
@@ -73,11 +73,12 @@ const Layout = ({ children }) => {
       </aside>
 
       <main className="main-content">
-        {children}
+        <Outlet />
       </main>
     </div>
   );
 };
 
 export default Layout;
+
 

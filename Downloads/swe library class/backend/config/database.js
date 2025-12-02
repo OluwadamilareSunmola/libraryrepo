@@ -28,6 +28,60 @@ const init = async () => {
   });
 };
 
+const ensureDemoMember = () => {
+  return new Promise(async (resolve) => {
+    const demoMembershipID = 'LIB-00001';
+    db.get('SELECT membershipID FROM users WHERE membershipID = ?', [demoMembershipID], async (err, row) => {
+      if (err) {
+        console.error('Error checking demo member:', err);
+        return resolve();
+      }
+
+      if (row) {
+        return resolve();
+      }
+
+      try {
+        const hashedPassword = await bcrypt.hash('password123', 10);
+        const now = new Date();
+        const expiration = new Date(now);
+        expiration.setFullYear(expiration.getFullYear() + 1);
+
+        db.run(
+          `INSERT INTO users (username, email, password, firstName, lastName, role, status, membershipID, membershipType, joinDate, membershipExpiration)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            'demo_member',
+            'demo.member@example.com',
+            hashedPassword,
+            'Demo',
+            'Member',
+            'member',
+            'approved',
+            demoMembershipID,
+            'Adult',
+            now.toISOString(),
+            expiration.toISOString()
+          ],
+          (insertErr) => {
+            if (insertErr) {
+              if (!insertErr.message.includes('UNIQUE')) {
+                console.error('Error creating demo member:', insertErr);
+              }
+            } else {
+              console.log('Demo member created (membershipID: LIB-00001)');
+            }
+            resolve();
+          }
+        );
+      } catch (hashErr) {
+        console.error('Error hashing password for demo member:', hashErr);
+        resolve();
+      }
+    });
+  });
+};
+
 const createTables = async () => {
   return new Promise((resolve, reject) => {
     db.serialize(() => {
@@ -177,7 +231,7 @@ db.run(`CREATE TABLE IF NOT EXISTS fines (
       db.get("SELECT COUNT(*) as count FROM books", (err, row) => {
         if (err) {
           console.error('Error checking books:', err);
-          resolve();
+          ensureDemoMember().finally(resolve);
           return;
         }
         
@@ -186,7 +240,9 @@ db.run(`CREATE TABLE IF NOT EXISTS fines (
         } else {
           console.log(`Database has ${row.count} books.`);
         }
-        resolve();
+        ensureDemoMember()
+          .catch(() => {})
+          .finally(resolve);
       });
     });
   });

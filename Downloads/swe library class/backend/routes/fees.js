@@ -196,3 +196,9 @@ router.get('/member/:userID/summary', (req, res) => {
 });
 
 module.exports = router;
+
+
+
+
+
+
