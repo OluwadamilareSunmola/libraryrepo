@@ -1,0 +1,5 @@
+Flask==2.2.2
+requests==2.28.1
+yfinance==0.1.70
+asyncio==3.4.3
+```

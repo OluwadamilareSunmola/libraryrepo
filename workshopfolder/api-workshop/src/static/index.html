@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TICKER — Financial Research Terminal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #f5f0e8;
+            color: #1a1a1a;
+            font-family: 'IBM Plex Mono', monospace;
+            line-height: 1.5;
+            font-size: 13px;
+            position: relative;
+        }
+
+        /* Subtle paper texture effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(26, 26, 26, 0.01) 0px,
+                    rgba(26, 26, 26, 0.01) 1px,
+                    transparent 1px,
+                    transparent 2px
+                );
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* --- HEADER --- */
+        header {
+            border-bottom: 3px solid #1a1a1a;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+        }
+
+        .masthead {
+            font-family: 'Courier Prime', monospace;
+            font-size: 42px;
+            font-weight: 700;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            line-height: 1;
+        }
+
+        .tagline {
+            font-family: 'Crimson Text', serif;
+            font-style: italic;
+            font-size: 16px;
+            color: #2d7a3e;
+            letter-spacing: 2px;
+        }
+
+        /* --- SEARCH SECTION --- */
+        .search-section {
+            margin-bottom: 40px;
+            border: 2px solid #1a1a1a;
+            padding: 20px;
+            background-color: #fcf9f3;
+        }
+
+        .search-label {
+            display: block;
+            font-family: 'Crimson Text', serif;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #2d7a3e;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            padding: 12px;
+            border: 2px solid #1a1a1a;
+            background-color: #ffffff;
+            color: #1a1a1a;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            background-color: #e8e3d8;
+            border-color: #2d7a3e;
+        }
+
+        button {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 12px 24px;
+            background-color: #1a1a1a;
+            color: #f5f0e8;
+            border: 2px solid #1a1a1a;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #f5f0e8;
+            color: #1a1a1a;
+        }
+
+        .search-hint {
+            font-size: 11px;
+            color: #555;
+            margin-top: 8px;
+            font-style: italic;
+        }
+
+        /* --- RESULTS GRID --- */
+        .results-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .result-card {
+            border: 2px solid #1a1a1a;
+            padding: 16px;
+            background-color: #ffffff;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .result-card:hover {
+            background-color: #e8e3d8;
+        }
+
+        /* --- CHART SECTION --- */
+        .chart-section {
+            margin-bottom: 40px;
+            border: 2px solid #1a1a1a;
+            padding: 20px;
+            background-color: #ffffff;
+        }
+
+        .chart-title {
+            font-family: 'Courier Prime', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #2d7a3e;
+        }
+
+        #tradingChart {
+            width: 100%;
+            height: 400px;
+            border: 1px solid #e0dcce;
+        }
+
+        .chart-empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            background-color: #fcf9f3;
+            border: 1px dashed #888;
+            font-style: italic;
+            color: #666;
+        }
+            font-family: 'Courier Prime', monospace;
+            font-weight: 700;
+            font-size: 18px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .quote-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-top: 1px solid #e0dcce;
+        }
+
+        .quote-row:first-child {
+            border-top: none;
+        }
+
+        .quote-label {
+            color: #555;
+            font-weight: 500;
+        }
+
+        .quote-value {
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .price {
+            font-family: 'Courier Prime', monospace;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .positive {
+            color: #2d7a3e;
+        }
+
+        .negative {
+            color: #a83a3a;
+        }
+
+        .source-badge {
+            font-size: 10px;
+            color: #888;
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-top: 1px solid #e0dcce;
+            padding-top: 8px;
+        }
+
+        /* --- NEWS SECTION --- */
+        .news-section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-family: 'Crimson Text', serif;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #1a1a1a;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .news-card {
+            border: 2px solid #1a1a1a;
+            padding: 16px;
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .news-card:hover {
+            background-color: #e8e3d8;
+        }
+
+        .news-headline {
+            font-family: 'Crimson Text', serif;
+            font-size: 15px;
+            font-weight: bold;
+            line-height: 1.4;
+            color: #1a1a1a;
+        }
+
+        .news-description {
+            font-size: 12px;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .news-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: #666;
+            margin-top: auto;
+            padding-top: 10px;
+            border-top: 1px solid #e0dcce;
+        }
+
+        .news-source {
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .news-date {
+            text-align: right;
+        }
+
+        /* --- EMPTY STATES --- */
+        .empty-state {
+            border: 2px dashed #888;
+            padding: 40px 20px;
+            text-align: center;
+            background-color: #fcf9f3;
+            font-style: italic;
+            color: #666;
+        }
+
+        .empty-emoji {
+            font-size: 32px;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        /* --- LOADING --- */
+        .loading {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: #1a1a1a;
+            border-radius: 0;
+            animation: loadPulse 0.8s ease-in-out infinite;
+        }
+
+        @keyframes loadPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* --- TASK PANEL --- */
+        .task-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 280px;
+            max-height: 400px;
+            background-color: #f5f0e8;
+            border: 3px solid #1a1a1a;
+            padding: 16px;
+            overflow-y: auto;
+            z-index: 100;
+            font-size: 11px;
+            animation: slideUp 0.6s ease-out 0.8s both;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .task-title {
+            font-family: 'Courier Prime', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #1a1a1a;
+        }
+
+        .task-list {
+            list-style: none;
+        }
+
+        .task-item {
+            margin-bottom: 10px;
+            padding: 8px;
+            background-color: #ffffff;
+            border-left: 3px solid #2d7a3e;
+            font-size: 10px;
+            line-height: 1.4;
+        }
+
+        .task-item::before {
+            content: '→ ';
+            font-weight: 600;
+            color: #2d7a3e;
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 15px;
+            }
+
+            .masthead {
+                font-size: 28px;
+                letter-spacing: 4px;
+            }
+
+            #tradingChart {
+                height: 300px;
+            }
+
+            .results-container,
+            .news-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .task-panel {
+                position: static;
+                width: 100%;
+                max-height: none;
+                margin-top: 30px;
+            }
+        }
+
+        /* --- SCROLLBAR STYLING --- */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #e8e3d8;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #1a1a1a;
+            border-radius: 0;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #2d7a3e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <header>
+            <div class="masthead">TICKER</div>
+            <div class="tagline">Financial Research Terminal for Students</div>
+        </header>
+
+        <!-- SEARCH SECTION -->
+        <div class="search-section">
+            <label class="search-label">Market Research</label>
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Enter ticker symbol (e.g., AAPL, GOOGL, TSLA)" spellcheck="false">
+                <button id="searchBtn">Search</button>
+            </div>
+            <div class="search-hint">Press Enter or click Search. Tip: Try AAPL, GOOGL, TSLA, or MSFT</div>
+        </div>
+
+        <!-- CHART SECTION -->
+        <div class="chart-section">
+            <div class="chart-title">Price History (30 Days)</div>
+            <div id="tradingChart" class="chart-empty">📈 Search a ticker to load chart</div>
+        </div>
+
+        <!-- RESULTS SECTION -->
+        <div id="resultsContainer" class="results-container">
+            <div class="empty-state">
+                <span class="empty-emoji">📊</span>
+                <div>Enter a ticker to begin research</div>
+            </div>
+        </div>
+
+        <!-- NEWS SECTION -->
+        <div class="news-section">
+            <div class="section-title">Recent News</div>
+            <div id="newsContainer" class="news-grid">
+                <div class="empty-state">
+                    <span class="empty-emoji">📰</span>
+                    <div>News articles will appear here</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TASK PANEL -->
+    <div class="task-panel">
+        <div class="task-title">→ Bootcamp Tasks</div>
+        <ul class="task-list">
+            <li class="task-item">Wire <code>fetchChartData()</code> to /api/history</li>
+            <li class="task-item">Wire <code>fetchQuoteData()</code> to Polygon API</li>
+            <li class="task-item">Wire <code>fetchNewsData()</code> to News API</li>
+            <li class="task-item">Handle errors for invalid tickers</li>
+        </ul>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const newsContainer = document.getElementById('newsContainer');
+        const chartContainer = document.getElementById('tradingChart');
+
+        // Initialize Lightweight Charts
+        let chart = null;
+        let candlestickSeries = null;
+
+        function initChart() {
+            if (chart) return; // Only init once
+            
+            chart = LightweightCharts.createChart(chartContainer, {
+                layout: {
+                    textColor: '#1a1a1a',
+                    background: { color: '#ffffff' },
+                },
+                width: chartContainer.offsetWidth,
+                height: 400,
+                timeScale: {
+                    timeVisible: true,
+                    secondsVisible: false,
+                },
+            });
+
+            candlestickSeries = chart.addCandlestickSeries({
+                upColor: '#2d7a3e',
+                downColor: '#a83a3a',
+                borderUpColor: '#2d7a3e',
+                borderDownColor: '#a83a3a',
+                wickUpColor: '#2d7a3e',
+                wickDownColor: '#a83a3a',
+            });
+
+            chart.timeScale().fitContent();
+        }
+
+        // Event Listeners
+        searchBtn.addEventListener('click', handleSearch);
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSearch();
+        });
+
+        // Keyboard shortcut: Ctrl+E for AAPL demo
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'e') {
+                searchInput.value = 'AAPL';
+                handleSearch();
+            }
+        });
+
+        async function handleSearch() {
+            const ticker = searchInput.value.trim().toUpperCase();
+            if (!ticker) {
+                alert('Please enter a ticker symbol');
+                return;
+            }
+
+            resultsContainer.innerHTML = `<div class="empty-state"><span class="loading"></span> Loading...</div>`;
+            newsContainer.innerHTML = `<div class="empty-state"><span class="loading"></span> Fetching news...</div>`;
+            chartContainer.innerHTML = `<div class="chart-empty"><span class="loading"></span> Loading chart...</div>`;
+
+            try {
+                // Initialize chart on first search
+                if (!chart) {
+                    initChart();
+                }
+
+                // Fetch and display chart data
+                await fetchAndDisplayChart(ticker);
+
+                // Fetch and display quote data
+                const quoteData = await fetchQuoteData(ticker);
+                displayResults(ticker, quoteData);
+
+                // Fetch and display news
+                const newsData = await fetchNewsData(ticker);
+                displayNews(newsData);
+            } catch (error) {
+                console.error('Error:', error);
+                resultsContainer.innerHTML = `<div class="empty-state"><span class="empty-emoji">⚠️</span><div>Error fetching data. Try another ticker.</div></div>`;
+                chartContainer.innerHTML = `<div class="chart-empty">📉 No chart data available</div>`;
+            }
+        }
+
+
+        /**
+         * TODO: STUDENT TASK #1
+         * Replace this mock with a real API call to your backend for stock history.
+         * Example:
+         * const response = await fetch(`http://localhost:5000/api/history/${ticker}?period=1mo`);
+         * const data = await response.json();
+         * return data.data; // array of { date, open, high, low, close, volume }
+         */
+        async function fetchChartData(ticker) {
+            // STUDENT: Replace this mock with a real fetch call to your backend
+            // See the example above for guidance
+            // ...mock data below for demo...
+            const today = new Date();
+            const data = [];
+            for (let i = 29; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(date.getDate() - i);
+                const timestamp = Math.floor(date.getTime() / 1000);
+                const basePrice = 150 + Math.random() * 50;
+                const open = basePrice;
+                const close = basePrice + (Math.random() - 0.5) * 10;
+                const high = Math.max(open, close) + Math.random() * 5;
+                const low = Math.min(open, close) - Math.random() * 5;
+                data.push({
+                    time: timestamp,
+                    open: parseFloat(open.toFixed(2)),
+                    high: parseFloat(high.toFixed(2)),
+                    low: parseFloat(low.toFixed(2)),
+                    close: parseFloat(close.toFixed(2)),
+                    volume: Math.floor(Math.random() * 100000000),
+                });
+            }
+            return data;
+        }
+
+        async function fetchAndDisplayChart(ticker) {
+            const chartData = await fetchChartData(ticker);
+            
+            if (!chartData || chartData.length === 0) {
+                chartContainer.innerHTML = `<div class="chart-empty">📉 No historical data</div>`;
+                return;
+            }
+
+            if (candlestickSeries) {
+                candlestickSeries.setData(chartData);
+                chart.timeScale().fitContent();
+            }
+        }
+
+
+        /**
+         * TODO: STUDENT TASK #2
+         * Replace this mock with a real API call to your backend for stock quote.
+         * Example:
+         * const response = await fetch(`http://localhost:5000/api/quote/${ticker}`);
+         * const data = await response.json();
+         * return data; // { symbol, price, change, change_pct, volume, market_cap, ... }
+         */
+        async function fetchQuoteData(ticker) {
+            // STUDENT: Replace this mock with a real fetch call to your backend
+            // See the example above for guidance
+            // ...mock data below for demo...
+            await new Promise(resolve => setTimeout(resolve, 500));
+            const mockData = {
+                'AAPL': { symbol: 'AAPL', price: 182.45, change: 2.35, volume: 48500000, source: 'Polygon' },
+                'GOOGL': { symbol: 'GOOGL', price: 142.30, change: -1.20, volume: 21300000, source: 'Tiingo' },
+                'TSLA': { symbol: 'TSLA', price: 245.60, change: 5.80, volume: 118700000, source: 'Polygon' },
+                'MSFT': { symbol: 'MSFT', price: 415.20, change: 3.15, volume: 15400000, source: 'Tiingo' }
+            };
+            return mockData[ticker] || { symbol: ticker, price: 0, change: 0, volume: 0, source: 'Unknown' };
+        }
+
+
+        /**
+         * TODO: STUDENT TASK #3
+         * Replace this mock with a real API call to your backend for news articles.
+         * Example:
+         * const response = await fetch(`http://localhost:5000/api/news/${ticker}`);
+         * const data = await response.json();
+         * return data.articles; // array of news articles
+         */
+        async function fetchNewsData(ticker) {
+            // STUDENT: Replace this mock with a real fetch call to your backend
+            // See the example above for guidance
+            // ...mock data below for demo...
+            await new Promise(resolve => setTimeout(resolve, 600));
+            const mockNews = [
+                { title: `${ticker} Reports Strong Q1 Earnings`, description: 'Company beats analyst expectations with 15% revenue growth.', source: 'Reuters', date: '2024-03-25' },
+                { title: `Market Analyst Updates ${ticker} Price Target`, description: 'Upgraded to "Buy" rating with 12-month target of $250.', source: 'Bloomberg', date: '2024-03-24' }
+            ];
+            return mockNews;
+        }
+
+        function displayResults(ticker, data) {
+            if (!data || !data.symbol) {
+                resultsContainer.innerHTML = `<div class="empty-state"><span class="empty-emoji">❌</span><div>No data found for ${ticker}</div></div>`;
+                return;
+            }
+
+            const changeClass = data.change >= 0 ? 'positive' : 'negative';
+            const changeSign = data.change >= 0 ? '+' : '';
+            const volumeFormatted = (data.volume / 1000000).toFixed(1);
+
+            resultsContainer.innerHTML = `
+                <div class="result-card">
+                    <div class="stock-symbol">${data.symbol}</div>
+                    
+                    <div class="quote-row">
+                        <span class="quote-label">Price</span>
+                        <span class="quote-value price">$${data.price.toFixed(2)}</span>
+                    </div>
+                    
+                    <div class="quote-row">
+                        <span class="quote-label">Change</span>
+                        <span class="quote-value ${changeClass}">${changeSign}${data.change.toFixed(2)}</span>
+                    </div>
+                    
+                    <div class="quote-row">
+                        <span class="quote-label">Volume</span>
+                        <span class="quote-value">${volumeFormatted}M</span>
+                    </div>
+                    
+                    <div class="source-badge">Source: ${data.source}</div>
+                </div>
+            `;
+        }
+
+        function displayNews(newsArray) {
+            if (!newsArray || newsArray.length === 0) {
+                newsContainer.innerHTML = `<div class="empty-state"><span class="empty-emoji">📭</span><div>No news available</div></div>`;
+                return;
+            }
+
+            newsContainer.innerHTML = newsArray.map(article => `
+                <div class="news-card">
+                    <div class="news-headline">${article.title}</div>
+                    <div class="news-description">${article.description || 'No description available.'}</div>
+                    <div class="news-meta">
+                        <span class="news-source">${article.source}</span>
+                        <span class="news-date">${new Date(article.date).toLocaleDateString()}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Demo: Load AAPL on page load (optional)
+        window.addEventListener('load', () => {
+            // Uncomment to auto-load AAPL on startup:
+            // searchInput.value = 'AAPL';
+            // handleSearch();
+        });
+    </script>
+</body>
+</html>
